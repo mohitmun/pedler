@@ -25,3 +25,4 @@ Features
   pre order
   reminders
   wallet
+  dynamic update stock
