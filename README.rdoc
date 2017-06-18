@@ -12,7 +12,9 @@ sign up as user
   what do you want
   cancel order
   recuring orders
-
+  get direction
+  call business
+  order online
   
 
 
@@ -20,9 +22,10 @@ sign up as user
 Features
   its in hindi
   set location radius
-  sms alerts
-  facebook pay
   pre order
   reminders
   wallet
   dynamic update stock
+  
+
+  sms alerts(no time)
