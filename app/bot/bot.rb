@@ -33,59 +33,9 @@ Bot.on :postback do |postback|
   
 end
 
-Facebook::Messenger::Profile.set({
-  get_started: {
-    payload: 'GET_STARTED_PAYLOAD'
-  }
-}, access_token: ENV['ACCESS_TOKEN'])
-Facebook::Messenger::Profile.set({
-  persistent_menu: [
-    {
-      locale: 'default',
-      composer_input_disabled: true,
-      call_to_actions: [
-        {
-        title: "My Account",
-        type: 'nested',
-        call_to_actions: [ 
-          {
-            title: 'My Wallet',
-            type: 'nested',
-            call_to_actions: [
-              {
-                title: 'View Balance',
-                type: 'postback',
-                payload: 'view_balance'
-              },
-              {
-                title: 'Add money',
-                type: 'postback',
-                payload: 'add_money'
-              },
-              {
-                title: 'Show transactions',
-                type: 'postback',
-                payload: 'show_transactions'
-              }
-            ]
-          },
-          {
-            type: 'postback',
-            title: 'Update Location',
-            payload: 'update_location'
-          },
-          {
-            type: 'postback',
-            title: 'Change Role',
-            payload: 'change_role'
-          }
-        ]},
-        {
-          type: 'postback',
-          title: 'More Settings',
-          payload: 'more_settings'
-        }
-      ]
-    }
-  ]
-}, access_token: ENV['ACCESS_TOKEN'])
+# Facebook::Messenger::Profile.set({
+#   get_started: {
+#     payload: 'GET_STARTED_PAYLOAD'
+#   }
+# }, access_token: ENV['ACCESS_TOKEN'])
+# Facebook::Messenger::Profile.set({  persistent_menu: [{  locale: 'default',  composer_input_disabled: false,  call_to_actions: [{title: "My Account",type: 'nested',call_to_actions: [  {title: 'My Wallet',type: 'nested',call_to_actions: [  {title: 'View Balance',type: 'postback',payload: 'view_balance'  },  {title: 'Add money',type: 'postback',payload: 'add_money'  },  {title: 'Show transactions',type: 'postback',payload: 'show_transactions'  }]  },  {type: 'postback',title: 'Update Location',payload: 'update_location'  },  {type: 'postback',title: 'Change Role',payload: 'change_role'  }]},{  type: 'postback',  title: I18n.t('more_settings'),  payload: 'more_settings'}  ]}  ]}, access_token: ENV['ACCESS_TOKEN'])
