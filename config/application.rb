@@ -21,7 +21,9 @@ module Pedler
     # config.i18n.default_locale = :de
 
     # Do not swallow errors in after_commit/after_rollback callbacks.
-    config.active_record.raise_in_transactional_callbacks = true
+    # config.logger = Logger.new(STDOUT)
+    config.log_level = :warn
+    # config.active_record.raise_in_transactional_callbacks = true
     config.paths.add File.join('app', 'bot'), glob: File.join('**', '*.rb')
     config.autoload_paths += Dir[Rails.root.join('app', 'bot', '*')]
   end

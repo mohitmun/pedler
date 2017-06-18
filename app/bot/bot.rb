@@ -8,6 +8,27 @@ Bot.on :message do |message|
   message.text        # => 'Hello, bot!'
   message.attachments # => [ { 'type' => 'image', 'payload' => { 'url' => 'https://www.example.com/1.jpg' } } ]
   puts "Woah"
-  puts "Woah mess:" + message.text
-  message.reply(text: 'Hello, human!')
+  # message.reply(text: 'Hello, human!')
+  user = User.find_by(fb_id: message.sender['id']) rescue nil
+  Rails.cache.write("chus", message)
+  if user.blank?
+    User.create_from_message(message)
+  else
+    user.start_flow(message)
+  end
+end
+
+Bot.on :postback do |postback|
+  postback.sender    # => { 'id' => '1008372609250235' }
+  postback.recipient # => { 'id' => '2015573629214912' }
+  postback.sent_at   # => 2016-04-22 21:30:36 +0200
+  postback.payload   # => 'EXTERMINATE'
+
+  user = User.find_by(fb_id: postback.sender['id']) rescue nil
+  if user.blank?
+    User.create_from_message(postback)
+  else
+    user.on_postback(postback)
+  end
+  
 end

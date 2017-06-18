@@ -20,4 +20,8 @@
 # available at http://guides.rubyonrails.org/i18n.html.
 
 en:
-  hello: "Hello world"
+  hello: "Hey %{name}, Pedler helps you discover nearby grocery stores. Continue as"
+  continue_business_owner: "Business owner"
+  continue_customer: "Customer"
+  signed_up_as_customer: "You have signed up as Customer"
+  signed_up_as_business: "You have signed up as Business"

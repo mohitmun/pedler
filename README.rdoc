@@ -1,28 +1,27 @@
-== README
+sign up as entepreneur
+  kind of business
+  ask phone number
+  allow users to get phone number?
+  do you deliver
+  upload photo of items
+  if restaurant enter menu
+  do you take pre order
+  user management
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+sign up as user
+  what do you want
+  cancel order
+  recuring orders
 
-Things you may want to cover:
-
-* Ruby version
-
-* System dependencies
-
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+  
 
 
-Please feel free to use a different markup language if you do not plan to run
-<tt>rake doc:app</tt>.
+=======================
+Features
+  its in hindi
+  set location radius
+  sms alerts
+  facebook pay
+  pre order
+  reminders
+  wallet
