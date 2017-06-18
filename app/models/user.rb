@@ -86,18 +86,72 @@ class User < ActiveRecord::Base
   #         "payload": "payload"
   #       }
   #     ]
+  def self.create_group(count)
+    group = []
+    while count != 0
+      if count%4 == 0
+        group << 4
+        count = count - 4
+      elsif count%4 == 1
+        group << 2
+        group << 3
+        count = count - 5
+      else
+        group << count%4
+        count = count - (count%4)
+      end
+    end
+    return group.reverse
+  end
+
   def self.send_list(message, elements, buttons)
-    message.reply(
+    # message.reply(
+    #   "attachment": 
+    #   {
+    #     "type": "template",
+    #     "payload": {
+    #       "template_type": "list",
+    #       "top_element_style": "compact",
+    #       "elements": elements[0..3],
+    #       "buttons": buttons
+    #     }
+    # })   
+    if elements.count == 1
+      elements[0][:buttons] += buttons if !buttons.blank?
+      puts elements
+      message.reply(
+      "attachment": 
+      {
+        "type": "template",
+        "payload": {
+          "template_type": "generic",
+          "elements": elements
+        }
+      })
+      return 
+    end
+    i = 0
+    group = User.create_group(elements.count)
+    group.each_with_index do |count, index|
+      j = i + count
+      if index != (group.count - 1)
+        buttons_ = []
+      else
+        buttons_ = buttons
+      end
+      message.reply(
       "attachment": 
       {
         "type": "template",
         "payload": {
           "template_type": "list",
           "top_element_style": "compact",
-          "elements": elements,
-          "buttons": buttons
+          "elements": elements[i..j-1],
+          "buttons": buttons_
         }
-    })
+      })
+      i = j
+    end
   end
 
   def save_fb_profile
@@ -163,6 +217,8 @@ class User < ActiveRecord::Base
     elsif payload == "update_phone"
       message.reply(text: I18n.t('update_phone'))
       update_attributes(state: "state_get_phone")
+    elsif payload == "change_role"
+      send_welcome_message(message)
     elsif payload == "enable_delivery"
       update_attribute(:delivery, true)
       send_delivery_success(message)
@@ -247,7 +303,10 @@ class User < ActiveRecord::Base
     when "state_done"
       after_onboarding(message)
     when "state_ask_for_order"
-      query = message.text
+      # query = message.text
+      
+      message.reply(text: I18n.t("searching_for", query: message.text))
+      Grocery.send_items(message)
     else
       send_select_language(message)
       # send_welcome_message(message)
