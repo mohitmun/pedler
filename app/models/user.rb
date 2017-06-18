@@ -1,10 +1,16 @@
 class User < ActiveRecord::Base
-  store_accessor :json_store, :profile_pic, :state
+  store_accessor :json_store, :profile_pic, :state, :lang
   has_and_belongs_to_many :groceries, -> { uniq }, join_table: "user_grocery_mappings"
   def self.create_from_message(message)
-    user = User.create(fb_id: message.sender['id'], state: 0)
+    user = User.create(fb_id: message.sender['id'], state: "ask_for_lang")
     user.save_fb_profile
-    user.send_welcome_message(message)
+    # user.send_welcome_message(message)
+    user.send_select_language(message)
+  end
+
+  def send_select_language(message)
+    buttons = {"set_english" => I18n.t('english'),  "set_hindi" => I18n.t('hindi')}
+    send_buttons(message, I18n.t('select_language'), buttons)
   end
 
   def get_fb_profile
@@ -124,20 +130,24 @@ class User < ActiveRecord::Base
     buttons = {"continue_business_owner" => I18n.t('continue_business_owner'),  "continue_customer" => I18n.t('continue_customer')}
     send_buttons(message, I18n.t('hello', name: first_name), buttons)
   end
-  STATE = {0 => "ask_for_role", 1 => "ask_for_business", 2 => "ask_for_location"}
-
+  # STATE = {0 => "ask_for_role", 1 => "ask_for_business", 2 => "ask_for_location", }
+  # [ask_for_lang, ask_for_role, send_welcome_message, ask_for_business]
   def on_postback(postback)
     payload = postback.payload
     
     if payload == "continue_customer"
-      update_attributes(role: "customer", state: 1)
+      update_attributes(role: "customer", state: "state_ask_for_business")
       postback.reply(text: I18n.t('signed_up_as_customer'))
-      return
+      ask_for_business(message)
     elsif payload == "continue_business_owner"
-      update_attributes(role: "business", state: 1)
+      update_attributes(role: "business", state: "state_ask_for_business")
       postback.reply(text: I18n.t('signed_up_as_business'))
-      return
+      ask_for_business(message)
     # end
+    elsif payload == "set_hindi"
+      update_attributes(lang: "hi", state: "state_send_welcome_message")
+    elsif payload == "set_english"
+      update_attributes(lang: "en", state: "state_send_welcome_message")
     elsif payload.include?("list_categories")
       send_select_list_categories(postback, payload.split(":").last.to_i)
     end
@@ -145,15 +155,18 @@ class User < ActiveRecord::Base
 
   def start_flow(message)
     if self.state.blank?
-      self.state = 0
-    else 
-      self.state = state.to_i
+      self.state = "ask_for_lang"
     end
     case self.state
-    when 0
+    when "state_ask_for_lang"
+      send_select_language(message)
+    when "state_send_welcome_message"
       send_welcome_message(message)
-    when 1
+    when "state_ask_for_business"
       ask_for_business(message)
+    else
+      send_select_language(message)
+      # send_welcome_message(message)
     end
   end
 
@@ -176,7 +189,7 @@ class User < ActiveRecord::Base
     Grocery.top_categories.offset(Grocery::COUNT*page).limit(Grocery::COUNT).each do |item|
       element_buttons = [
           {
-            "title": I18n.t('select'),
+            "title": I18n.t('select') + " #{item.name}",
             "type": "postback",
             "payload": "select_grocery:#{item.id}"
           }
@@ -200,12 +213,9 @@ class User < ActiveRecord::Base
       }
       elements << element
     end
-    User.send_list(message, elements, buttons)
-  end
-
-
-  def self.chus
-    
+    if !elements.blank?
+      User.send_list(message, elements, buttons)
+    end
   end
 
 end

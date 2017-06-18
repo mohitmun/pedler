@@ -29,3 +29,6 @@ en:
   remove: "Remove"
   show_items: "Show items"
   select_grocery: "Please select the categories revelant to your business"
+  select_language: "Please select language"
+  english: "English"
+  hindi: "हिन्दी"
