@@ -1,5 +1,6 @@
 class Grocery < ApplicationRecord
-  has_and_belongs_to_many :users, -> { uniq }, join_table: "user_grocery_mappings"
+  default_scope {order(name: :asc)}
+  has_and_belongs_to_many :users, join_table: "user_grocery_mappings"
 
   def children
     Grocery.where(parent_id: self.id)
