@@ -1,0 +1,2 @@
+class UserGroceryMapping < ApplicationRecord
+end
