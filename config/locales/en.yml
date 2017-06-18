@@ -25,3 +25,7 @@ en:
   continue_customer: "Customer"
   signed_up_as_customer: "You have signed up as Customer"
   signed_up_as_business: "You have signed up as Business"
+  select: "Select"
+  remove: "Remove"
+  show_items: "Show items"
+  select_grocery: "Please select the categories revelant to your business"
