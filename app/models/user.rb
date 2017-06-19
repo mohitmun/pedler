@@ -341,6 +341,7 @@ class User < ActiveRecord::Base
     if !message.location_coordinates.blank?
       message.reply(text: I18n.t("location_updated"))
       update_attribute(:latlong, message.location_coordinates)
+      message.reply(text: I18n.t("enter_search"))
       return
     end
     if !message.quick_reply.blank?
