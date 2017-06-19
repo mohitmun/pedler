@@ -50,6 +50,8 @@ en:
   delivery_distance_success: "Delivery distance set to %{distance}km"
   delivery_distances: [1,2,3,5,7,9]
   added: "added"
+  removed: "removed"
+  remove: "Remove"
   searching_for: "Searching for: %{query}"
   store_subtitle: "%{distance} km - %{address}"
   call: "Call"
@@ -71,3 +73,5 @@ en:
   items_in_order: "Items in your cart"
   "yes": "Nes"
   "no": "No"
+  order_received: "You have received order from %{from}"
+  get_directions: "Get directions"

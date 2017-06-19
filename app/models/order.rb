@@ -1,6 +1,7 @@
 class Order < ApplicationRecord
   store_accessor :json_store, :item_ids, :store_id
   after_initialize :init
+  belongs_to :user
 
   def init
     self.item_ids = [] if self.item_ids.blank?
@@ -21,6 +22,39 @@ class Order < ApplicationRecord
 
   def place(message)
     message.reply(text: I18n.t("order_placed", cost: cost, order_id: self.id + 10000))
+    store = User.find(store_id)
+    result = I18n.t("order_received", from: user.first_name) + "\n"
+    result = result + list_and_total
+    # store.send_message(text: message)
+    buttons = []
+      buttons << {
+        title: I18n.t("get_directions"),
+        type: "web_url",
+        url: "http://maps.google.com/maps?saddr=#{store.latlong.join(",")}&daddr=#{user.latlong.join(",")}"
+      }
+    message = {
+      "attachment": 
+        {
+          "type": "template",
+          "payload": {
+            "template_type": "button",
+            "text": result,
+            "buttons": buttons
+          }
+      }
+    }
+    store.send_message(message)
+    # http://maps.google.com/maps?saddr=new+york&daddr=baltimore
+  end
+
+  def list_and_total
+    result = ""
+    item_ids.uniq.each do |item_id|
+      item = Grocery.find(item_id)
+      result = result + item.name + "(#{item_ids.count(item_id)}): Rs.#{item.cost}\n" 
+    end
+    result = result + "Total: Rs.#{cost}"
+    return result
   end
 
   def self.view_order(message)
@@ -40,6 +74,7 @@ class Order < ApplicationRecord
           payload: "place_order:#{order.id}"
         }
       ])
+
   end
 
 end

@@ -213,11 +213,19 @@ class User < ActiveRecord::Base
       Order.view_order(message)
     elsif payload == "change_role"
       send_welcome_message(message)
+    elsif payload == "update_grocery"
+      ask_for_business(message)
     elsif payload == "enable_delivery"
       update_attribute(:delivery, true)
       send_delivery_success(message)
     elsif payload.include?("list_categories")
       send_select_list_categories(postback, payload.split(":").last.to_i)
+    elsif payload.include?("remove_grocery")
+      grocery_id = payload.split(":").last
+      a = UserGroceryMapping.where(user_id: self.id, grocery_id: grocery_id)
+      a.delete_all
+      message.reply(text: "#{Grocery.find(grocery_id).name} " + I18n.t("removed"))
+      update_attribute(:state, "state_done")
     elsif payload.include?("select_grocery")
       grocery_id = payload.split(":").last
       UserGroceryMapping.create(user_id: self.id, grocery_id: grocery_id)
@@ -292,6 +300,14 @@ class User < ActiveRecord::Base
         text: I18n.t('select_delivery_distance'),
         quick_replies: quick_replies
       )
+  end
+
+  def send_message(message)
+    payload = {
+            recipient: {id: fb_id},
+            message: message
+    }
+    Facebook::Messenger::Bot.deliver(payload, access_token: ENV['ACCESS_TOKEN'])
   end
 
   def send_more_settings(message)
@@ -384,7 +400,7 @@ class User < ActiveRecord::Base
   def ask_for_business(message)
     # Grocery.send_select_list(message, 1)
     message.reply(text: I18n.t("select_grocery"))
-    send_select_list_categories(message, 1)
+    send_select_list_categories(message, 0)
   end
 
   def after_onboarding(message)
@@ -397,7 +413,7 @@ class User < ActiveRecord::Base
     buttons = []
     if(Grocery.top_categories.count - Grocery::COUNT*page > 0)
       buttons << {
-        "title": "View More(#{page*Grocery::COUNT}/#{Grocery.top_categories.count})",
+        "title": "View More(#{(page+1)*Grocery::COUNT}/#{Grocery.top_categories.count})",
         "type": "postback",
         "payload": "list_categories:#{page+1}"
       }
@@ -406,11 +422,17 @@ class User < ActiveRecord::Base
     #   title: "Chus",type: "postback", payload: "chus"
     # }
     Grocery.top_categories.offset(Grocery::COUNT*page).limit(Grocery::COUNT).each do |item|
+      payload = "select_grocery:#{item.id}"
+      title = I18n.t('select') + " #{item.name}"
+      if groceries.pluck(:id).include?(item.id)
+        title = I18n.t('remove') + " #{item.name}"
+        payload = "remove_grocery:#{item.id}"
+      end
       element_buttons = [
           {
-            "title": I18n.t('select') + " #{item.name}",
+            "title": title,
             "type": "postback",
-            "payload": "select_grocery:#{item.id}"
+            "payload": payload
           }
           # ,
           # {
