@@ -26,6 +26,8 @@ Features
   reminders
   wallet
   dynamic update stock
+  ratings?
+  image?  
   
 
   sms alerts(no time)

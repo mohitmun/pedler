@@ -21,6 +21,7 @@
 
 en:
   hello: "Hey %{name}, Pedler helps you discover nearby grocery stores. Continue as"
+  greeting_text: "Discover nearby grocery and household essentials stores"
   continue_business_owner: "Business owner"
   continue_customer: "Customer"
   signed_up_as_customer: "You have signed up as Customer"
@@ -45,6 +46,10 @@ en:
   enable_delivery: "Enable Home delivery"
   enable_delivery_success: "Home delivery is enabled!!"
   select_delivery_distance: "Select distance(km) within which you will deliver"
+  delivery_distance_success: "Delivery distance set to %{distance}km"
   delivery_distances: [1,2,3,5,7,9]
   added: "added"
   searching_for: "Searching for: %{query}"
+  store_subtitle: "%{distance} km - %{address}"
+  call: "Call"
+  order_online: "Order online"
