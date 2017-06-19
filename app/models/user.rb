@@ -1,6 +1,7 @@
 class User < ActiveRecord::Base
   store_accessor :json_store, :profile_pic, :state, :lang, :latlong, :delivery, :delivery_distance, :display_name, :phone
   has_and_belongs_to_many :groceries, join_table: "user_grocery_mappings"
+  has_many :orders
   def self.create_from_message(message)
     user = User.create(fb_id: message.sender['id'], state: "state_ask_for_lang")
     user.save_fb_profile
@@ -220,8 +221,37 @@ class User < ActiveRecord::Base
       UserGroceryMapping.create(user_id: self.id, grocery_id: grocery_id)
       message.reply(text: "#{Grocery.find(grocery_id).name} " + I18n.t("added"))
       update_attribute(:state, "state_done")
+    elsif payload.include?("order_from_store_item")
+      store_id = payload.split(":").last
+      item_id = payload.split(":")[-2]
+      order = self.orders.create(item_ids: [item_id], store_id: store_id)
+      message.reply(text: I18n.t("add_more_item"), quick_replies: [
+        {
+          title: "Yes",
+          content_type: "text",
+          payload: "order_from_store:#{order.id}:#{store_id}"
+        },{
+          title: "No",
+          content_type: "text",
+          payload: "place_order:#{order_id}"
+        }
+      ])
+    elsif payload.include?("place_order")
+      order_id = payload.split(":").last
+      order = Order.find(order_id)
+      order.place(message)
+    elsif payload.include?("add_to_order_item")
+      order_id = payload.split(":").last
+      item_id = payload.split(":")[-2]
+      order = self.orders.find(order_id)
+      order.add_item(item_id)
+    elsif payload.include?("order_from_store")
+      store_id = payload.split(":").last
+      order_id = payload.split(":")[-2]
+      u = User.find(store_id)
+      u.send_items_to_user(message, order_id)
     elsif payload.include?("search_stores")
-      Grocery.send_stores(message)
+      Grocery.send_stores(message, self)
     elsif payload.include?("set_delivery_distance")
       distance = payload.split(":").last
       update_attribute(:delivery_distance, distance)
@@ -229,6 +259,11 @@ class User < ActiveRecord::Base
     end
   end
 
+  def send_items_to_user(message, order_id)
+    current_store_categories = groceries.top_categories
+    message.reply(text: I18n.t("more_items_from_store", name: display_name))
+    Grocery.send_store_items(message, Grocery.where(parent_id: current_store_categories.pluck(:id)), order_id)
+  end
 
   def send_delivery_success(message)
     delivery_distances = I18n.t('delivery_distances')
@@ -268,7 +303,12 @@ class User < ActiveRecord::Base
         }
       )
     else
-
+      send_buttons(message, I18n.t("more_settings"), 
+        { 
+          "new_order" => I18n.t("new_order"),
+          "view_past_orders" => I18n.t("view_past_orders")
+        }
+      )
     end
   end
 
@@ -282,7 +322,7 @@ class User < ActiveRecord::Base
 
   def start_flow(message)
     if !message.location_coordinates.blank?
-      message.reply(text: "Your location is updated!")
+      message.reply(text: I18n.t("location_updated"))
       update_attribute(:latlong, message.location_coordinates)
       return
     end
@@ -310,7 +350,6 @@ class User < ActiveRecord::Base
       after_onboarding(message)
     when "state_ask_for_order"
       # query = message.text
-      
       message.reply(text: I18n.t("searching_for", query: message.text))
       Grocery.send_items(message)
     else
@@ -326,7 +365,8 @@ class User < ActiveRecord::Base
   end
 
   def after_onboarding(message)
-    message.reply(text: "Onboarded")
+    # message.reply(text: "Onboarded")
+    send_more_settings(message)
   end
 
   def send_select_list_categories(message, page)
