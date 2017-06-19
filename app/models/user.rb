@@ -2,10 +2,14 @@ class User < ActiveRecord::Base
   store_accessor :json_store, :profile_pic, :state, :lang, :latlong, :delivery, :delivery_distance, :display_name, :phone
   has_and_belongs_to_many :groceries, join_table: "user_grocery_mappings"
   def self.create_from_message(message)
-    user = User.create(fb_id: message.sender['id'], state: "ask_for_lang")
+    user = User.create(fb_id: message.sender['id'], state: "state_ask_for_lang")
     user.save_fb_profile
     # user.send_welcome_message(message)
     user.send_select_language(message)
+  end
+
+  def delivery?
+    !!delivery
   end
 
   def send_select_language(message)
@@ -118,7 +122,6 @@ class User < ActiveRecord::Base
     # })   
     if elements.count == 1
       elements[0][:buttons] += buttons if !buttons.blank?
-      puts elements
       message.reply(
       "attachment": 
       {
@@ -200,6 +203,8 @@ class User < ActiveRecord::Base
     # end
     elsif payload == "more_settings"
       send_more_settings(message)
+    elsif payload == "GET_STARTED_PAYLOAD"
+      send_select_language(message)
     elsif payload == "set_hindi"
       update_attributes(lang: "hi", state: "state_send_welcome_message")
       send_welcome_message(message)
@@ -229,9 +234,12 @@ class User < ActiveRecord::Base
       UserGroceryMapping.create(user_id: self.id, grocery_id: grocery_id)
       message.reply(text: "#{Grocery.find(grocery_id).name} " + I18n.t("added"))
       update_attribute(:state, "state_done")
+    elsif payload.include?("search_stores")
+      Grocery.send_stores(message)
     elsif payload.include?("set_delivery_distance")
       distance = payload.split(":").last
       update_attribute(:delivery_distance, distance)
+      message.reply(text: I18n.t('delivery_distance_success', distance: distance))
     end
   end
 
@@ -278,14 +286,26 @@ class User < ActiveRecord::Base
     end
   end
 
+  def handle_quick_replies(message)
+    if message.quick_reply.include?("set_delivery_distance")
+      distance = message.quick_reply.split(":").last
+      update_attribute(:delivery_distance, distance)
+      message.reply(text: I18n.t('delivery_distance_success', distance: distance))
+    end
+  end
+
   def start_flow(message)
     if !message.location_coordinates.blank?
       message.reply(text: "Your location is updated!")
       update_attribute(:latlong, message.location_coordinates)
       return
     end
+    if !message.quick_reply.blank?
+      handle_quick_replies(message)
+      return
+    end
     if self.state.blank?
-      self.state = "ask_for_lang"
+      self.state = "state_ask_for_lang"
     end
     case self.state
     when "state_ask_for_lang"

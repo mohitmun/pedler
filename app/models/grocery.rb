@@ -39,12 +39,52 @@ class Grocery < ApplicationRecord
           {
             title: I18n.t("select"),
             type: "postback",
-            payload: "search_business:#{item.id}"
+            payload: "search_stores:#{item.id}"
           }
         ]
       }
     end
     User.send_list(message, elements, [])
+  end
+
+
+  def self.send_stores(postback, current_user)
+    payload = postback.payload
+    grocery_id = payload.split(":").last
+    grocery = Grocery.find(grocery_id)
+    grocery.send_stores(postback, current_user)
+  end
+
+  def send_stores(message, current_user)
+    elements = []
+    distance = 4 #TODO 
+    users.each do |user|
+      buttons = []
+      buttons << {
+        title: I18n.t("call"),
+        type: "phone_number",
+        payload: user.phone
+      }
+      buttons << {
+        title: I18n.t("order_online"),
+        type: "postback",
+        payload: "order:#{user.id}"
+      }  if user.delivery?
+      elements << {
+        title: user.display_name,
+        subtitle: I18n.t("store_subtitle", distance: distance, address: "Mumbai"),
+        buttons: buttons
+      }
+    end
+    message.reply(
+      "attachment": 
+      {
+        "type": "template",
+        "payload": {
+          "template_type": "generic",
+          "elements": elements
+        }
+      })
   end
 
 #   items = ["1","2","3","4", "5"]
