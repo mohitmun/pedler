@@ -21,7 +21,7 @@ class Grocery < ApplicationRecord
   end
 
   def self.create_groceries
-    a = User.grocery_json
+    a = Grocery.grocery_json
     a.each do |top, child_array|
       g = Grocery.create(name: top)
       child_array.each do |item|
