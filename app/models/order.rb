@@ -23,4 +23,10 @@ class Order < ApplicationRecord
     message.reply(text: I18n.t("order_placed", cost: cost, order_id: self.id + 10000))
   end
 
+  def self.view_order(message)
+    order_id = message.payload.split(":").last
+    order = Order.find order_id
+    message.reply(text: order.to_json)
+  end
+
 end

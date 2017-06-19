@@ -209,6 +209,8 @@ class User < ActiveRecord::Base
     elsif payload == "update_phone"
       message.reply(text: I18n.t('update_phone'))
       update_attributes(state: "state_get_phone")
+    elsif payload.include?("view_order")
+      Order.view_order(message)
     elsif payload == "change_role"
       send_welcome_message(message)
     elsif payload == "enable_delivery"
@@ -225,7 +227,7 @@ class User < ActiveRecord::Base
       store_id = payload.split(":").last
       item_id = payload.split(":")[-2]
       order = self.orders.create(item_ids: [item_id], store_id: store_id)
-      message.reply(text: I18n.t("add_more_item"), quick_replies: [
+      message.reply(text: I18n.t("add_more_item", name: User.find(store_id).display_name), quick_replies: [
         {
           title: "Yes",
           content_type: "text",
@@ -233,7 +235,7 @@ class User < ActiveRecord::Base
         },{
           title: "No",
           content_type: "text",
-          payload: "place_order:#{order_id}"
+          payload: "place_order:#{order.id}"
         }
       ])
     elsif payload.include?("place_order")
@@ -245,24 +247,29 @@ class User < ActiveRecord::Base
       item_id = payload.split(":")[-2]
       order = self.orders.find(order_id)
       order.add_item(item_id)
-    elsif payload.include?("order_from_store")
-      store_id = payload.split(":").last
-      order_id = payload.split(":")[-2]
-      u = User.find(store_id)
-      u.send_items_to_user(message, order_id)
     elsif payload.include?("search_stores")
       Grocery.send_stores(message, self)
     elsif payload.include?("set_delivery_distance")
       distance = payload.split(":").last
       update_attribute(:delivery_distance, distance)
       message.reply(text: I18n.t('delivery_distance_success', distance: distance))
+    elsif payload.include?("selected_category")
+      order_id = payload.split(":").last
+      category_id = payload.split(":")[-2]
+      send_items_to_user(message, order_id, category_id)
     end
   end
 
-  def send_items_to_user(message, order_id)
+  def send_items_to_user(message, order_id, category_id)
+    category = Grocery.find(category_id)
+    message.reply(text: I18n.t("more_items_from_store_in_category", category: category.name))
+    Grocery.send_store_items(message, category.children, order_id)
+  end
+
+  def send_categories_to_user(message, order_id)
     current_store_categories = groceries.top_categories
-    message.reply(text: I18n.t("more_items_from_store", name: display_name))
-    Grocery.send_store_items(message, Grocery.where(parent_id: current_store_categories.pluck(:id)), order_id)
+    message.reply(text: I18n.t("more_items_from_store_select_category", name: display_name))
+    Grocery.send_store_categories(message, current_store_categories, order_id)
   end
 
   def send_delivery_success(message)
@@ -313,10 +320,20 @@ class User < ActiveRecord::Base
   end
 
   def handle_quick_replies(message)
-    if message.quick_reply.include?("set_delivery_distance")
-      distance = message.quick_reply.split(":").last
+    payload = message.quick_reply
+    if payload.include?("set_delivery_distance")
+      distance = payload.split(":").last
       update_attribute(:delivery_distance, distance)
       message.reply(text: I18n.t('delivery_distance_success', distance: distance))
+    elsif payload.include?("order_from_store")
+      store_id = payload.split(":").last
+      order_id = payload.split(":")[-2]
+      u = User.find(store_id)
+      u.send_categories_to_user(message, order_id)
+    elsif payload.include?("place_order")
+      order_id = payload.split(":").last
+      order = Order.find(order_id)
+      order.place(message)
     end
   end
 
@@ -328,6 +345,7 @@ class User < ActiveRecord::Base
     end
     if !message.quick_reply.blank?
       handle_quick_replies(message)
+      puts "wo"
       return
     end
     if self.state.blank?
@@ -350,8 +368,12 @@ class User < ActiveRecord::Base
       after_onboarding(message)
     when "state_ask_for_order"
       # query = message.text
-      message.reply(text: I18n.t("searching_for", query: message.text))
-      Grocery.send_items(message)
+      if message.text.size > 2
+        message.reply(text: I18n.t("searching_for", query: message.text))
+        Grocery.send_items(message)
+      else
+        message.reply(text: I18n.t("enter_minimum_3", query: message.text))
+      end
     else
       send_select_language(message)
       # send_welcome_message(message)

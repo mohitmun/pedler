@@ -1,5 +1,6 @@
 class Grocery < ApplicationRecord
   default_scope {order(name: :asc)}
+  scope :top_categories,  -> {where(parent_id: nil)}
   has_and_belongs_to_many :users, -> {where(role: "business")}, join_table: "user_grocery_mappings"
 
   def children
@@ -10,9 +11,6 @@ class Grocery < ApplicationRecord
     Grocery.find(parent_id) rescue self
   end
 
-  def self.top_categories
-    Grocery.where(parent_id: nil)
-  end
   COUNT = 7
   # MAX_PAGE_CATAGORIES = (Grocery.top_categories.count/10.0).ceil.to_i
   # MAX_PAGE_TOTAL = (Grocery.count/10.0).ceil.to_i
@@ -90,9 +88,37 @@ class Grocery < ApplicationRecord
         type: "postback",
         payload: "add_to_order_item:#{item.id}:#{order_id}"
       }
+      buttons << {
+        title: I18n.t("view_order"),
+        type: "postback",
+        payload: "view_order:#{order_id}" 
+      }
+      buttons << {
+        title: I18n.t("place_order"),
+        type: "postback",
+        payload: "place_order:#{order_id}" 
+      }
       elements << {
         title: item.name,
         subtitle: "Rs #{item.cost}",
+        buttons: buttons
+      }
+    end
+    Grocery.send_generic(message, elements)
+  end
+
+  def self.send_store_categories(message, items, order_id)
+    elements = []
+    items.each do |item|
+      buttons = []
+      buttons << {
+        title: I18n.t("select"),
+        type: "postback",
+        payload: "selected_category:#{item.id}:#{order_id}"
+      }
+      elements << {
+        title: item.name,
+        subtitle: item.children.pluck(:name).join(","),
         buttons: buttons
       }
     end
