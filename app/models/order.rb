@@ -26,7 +26,20 @@ class Order < ApplicationRecord
   def self.view_order(message)
     order_id = message.payload.split(":").last
     order = Order.find order_id
-    message.reply(text: order.to_json)
+    result = I18n.t("items_in_order") + "\n"
+    item_ids = order.item_ids
+    item_ids.uniq.each do |item_id|
+      item = Grocery.find(item_id)
+      result = result + item.name + "(#{item_ids.count(item_id)}): Rs.#{item.cost}\n" 
+    end
+    result = result + "Total: Rs.#{order.cost}"
+    message.reply(text: result, quick_replies: [
+        {
+          title: I18n.t("place_order"),
+          content_type: "text",
+          payload: "place_order:#{order.id}"
+        }
+      ])
   end
 
 end

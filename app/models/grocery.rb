@@ -169,7 +169,8 @@ class Grocery < ApplicationRecord
     if elements.blank?
       message.reply(text: I18n.t("no_stores"))
     else
-    Grocery.send_generic(message, elements)
+      message.reply(text: I18n.t("total_stores_found", count: elements.count))
+      Grocery.send_generic(message, elements)
     end
   end
 

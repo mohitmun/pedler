@@ -67,3 +67,7 @@ en:
   no_items: "No items found. Try another keyword"
   enter_minimum_3: "Please enter minimum 3 character for search"
   enter_search: "You can now search for items in nearby stores. Please enter query"
+  total_stores_found: "We have found total %{count} stores"
+  items_in_order: "Items in your cart"
+  "yes": "Nes"
+  "no": "No"

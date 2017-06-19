@@ -229,11 +229,11 @@ class User < ActiveRecord::Base
       order = self.orders.create(item_ids: [item_id], store_id: store_id)
       message.reply(text: I18n.t("add_more_item", name: User.find(store_id).display_name), quick_replies: [
         {
-          title: "Yes",
+          title: I18n.t("yes"),
           content_type: "text",
           payload: "order_from_store:#{order.id}:#{store_id}"
         },{
-          title: "No",
+          title: I18n.t("no"),
           content_type: "text",
           payload: "place_order:#{order.id}"
         }
