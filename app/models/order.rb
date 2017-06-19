@@ -43,7 +43,7 @@ class Order < ApplicationRecord
           }
       }
     }
-    store.send_message(message)
+    store.send_message(message) rescue nil
     # http://maps.google.com/maps?saddr=new+york&daddr=baltimore
   end
 
