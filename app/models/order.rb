@@ -20,8 +20,8 @@ class Order < ApplicationRecord
     return res
   end
 
-  def place(message)
-    message.reply(text: I18n.t("order_placed", cost: cost, order_id: self.id + 10000))
+  def place(message1)
+    user.send_message(text: I18n.t("order_placed", cost: cost, order_id: self.id + 10000))
     store = User.find(store_id)
     result = I18n.t("order_received", from: user.first_name) + "\n"
     result = result + list_and_total
