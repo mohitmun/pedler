@@ -66,3 +66,10 @@ Heroku Setup
       end
     end
     
+order flow
+  1. search for item
+  2. get list of stores
+  3. choose store
+  4. ask if more items
+  5. if no, place order
+  6. if yes, show all items from store
