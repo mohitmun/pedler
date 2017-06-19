@@ -31,3 +31,38 @@ Features
   
 
   sms alerts(no time)
+
+
+Heroku Setup
+  Grocery.create_groceries
+
+  Dummy Business account
+    data = {"Kash Karry Supermarket"=>[19.112944000000002, 72.87617999999999], "NEW MY CHOICE SUPER MARKET"=>[19.112944000000002, 72.87617999999999], "AaramShop C/o Nav Durga Super Market"=>[19.112944000000002, 72.87617999999999], "G-mart"=>[19.111864, 72.87902799999999], "Tanvi Super Market"=>[19.115023, 72.8590169], "AaramShop C/o Vardhman Store"=>[19.111864, 72.87902799999999], "Lucky super market"=>[19.115023, 72.8590169], "Super Janta Store"=>[19.115023, 72.8590169], "AaramShop C/o Rajesh Super Market"=>[19.1175915, 72.8836753], "Hari Om Super Market"=>[19.1175915, 72.8836753], "Patel genral store"=>[19.1175915, 72.8836753], "Sangam Store"=>[19.1061813, 72.8665255], "Prabhat Super Market"=>[19.1061813, 72.8665255], "AaramShop C/o Hi Mart"=>[19.1061813, 72.8665255], "Parth General Store"=>[19.1182016, 72.8852842], "AaramShop C/o Vimal Provision Stores"=>[19.1182016, 72.8852842], "Mangalore Stores"=>[19.1182016, 72.8852842], "L.R. General Stores"=>[19.120535, 72.8851289], "Kirana Market"=>[19.1176639, 72.85250789999999]}
+    data.each do |name, latlong|
+      json = {
+      "first_name": "Ownder of " + name,
+      "last_name": "",
+      "json_store": {
+        "state": "state_done",
+        "lang": "en",
+        "latlong": latlong,
+        "display_name": name,
+        "delivery": Random.rand(2) == false,
+        "phone": "#{Random.rand(10**10)}",
+        "delivery_distance": "#{Random.rand(10)}"
+      },
+      "role": "business",
+      "fb_id": "A144697749532#{Random.rand(1000)}"
+      }
+      User.create(json)
+    end
+
+  Generate mappings
+    count = Grocery.top_categories.count
+    User.all.each do |user|
+      gs = Grocery.top_categories.order("Random()").limit(Random.rand(count))
+      gs.each do |g|
+        UserGroceryMapping.create(user_id: user.id, grocery_id: g.id)
+      end
+    end
+    

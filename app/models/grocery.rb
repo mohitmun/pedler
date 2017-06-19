@@ -17,6 +17,22 @@ class Grocery < ApplicationRecord
   # MAX_PAGE_CATAGORIES = (Grocery.top_categories.count/10.0).ceil.to_i
   # MAX_PAGE_TOTAL = (Grocery.count/10.0).ceil.to_i
 
+  
+  def self.grocery_json
+    YAML.load(File.read("grocery.yml"))
+  end
+
+  def self.create_groceries
+    a = User.grocery_json
+    a.each do |top, child_array|
+      g = Grocery.create(name: top)
+      child_array.each do |item|
+        Grocery.create(name: item, parent_id: g.id)
+      end
+    end
+  end
+
+  
   def send_select_list(message, page)
     children.offset(COUNT*page).limit(COUNT).each do |item|
       
