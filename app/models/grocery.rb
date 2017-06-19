@@ -1,6 +1,6 @@
 class Grocery < ApplicationRecord
   default_scope {order(name: :asc)}
-  has_and_belongs_to_many :users, join_table: "user_grocery_mappings"
+  has_and_belongs_to_many :users, -> {where(role: "business")}, join_table: "user_grocery_mappings"
 
   def children
     Grocery.where(parent_id: self.id)
@@ -17,7 +17,7 @@ class Grocery < ApplicationRecord
   # MAX_PAGE_CATAGORIES = (Grocery.top_categories.count/10.0).ceil.to_i
   # MAX_PAGE_TOTAL = (Grocery.count/10.0).ceil.to_i
 
-  
+
   def self.grocery_json
     YAML.load(File.read("grocery.yml"))
   end
@@ -32,7 +32,7 @@ class Grocery < ApplicationRecord
     end
   end
 
-  
+
   def send_select_list(message, page)
     children.offset(COUNT*page).limit(COUNT).each do |item|
       
@@ -60,7 +60,11 @@ class Grocery < ApplicationRecord
         ]
       }
     end
-    User.send_list(message, elements, [])
+    if elements.blank?
+      message.reply(text: I18n.t("no_items"))
+    else
+      User.send_list(message, elements, [])
+    end
   end
 
 
@@ -68,13 +72,37 @@ class Grocery < ApplicationRecord
     payload = postback.payload
     grocery_id = payload.split(":").last
     grocery = Grocery.find(grocery_id)
-    grocery.send_stores(postback, current_user)
+    grocery.send_stores_for_item(grocery, postback,current_user)
   end
 
-  def send_stores(message, current_user)
+  def cost
+    #lol
+    #free world
+    (self.id%10)*10
+  end
+
+  def self.send_store_items(message, items, order_id)
+    elements = []
+    items.each do |item|
+      buttons = []
+      buttons << {
+        title: I18n.t("add_to_order"),
+        type: "postback",
+        payload: "add_to_order_item:#{item.id}:#{order_id}"
+      }
+      elements << {
+        title: item.name,
+        subtitle: "Rs #{item.cost}",
+        buttons: buttons
+      }
+    end
+    Grocery.send_generic(message, elements)
+  end
+
+  def send_stores_for_item(grocery, message, current_user)
     elements = []
     distance = 4 #TODO 
-    users.each do |user|
+    parent.users.each do |user|
       buttons = []
       buttons << {
         title: I18n.t("call"),
@@ -84,7 +112,7 @@ class Grocery < ApplicationRecord
       buttons << {
         title: I18n.t("order_online"),
         type: "postback",
-        payload: "order:#{user.id}"
+        payload: "order_from_store_item:#{grocery.id}:#{user.id}"
       }  if user.delivery?
       elements << {
         title: user.display_name,
@@ -92,15 +120,27 @@ class Grocery < ApplicationRecord
         buttons: buttons
       }
     end
-    message.reply(
-      "attachment": 
-      {
-        "type": "template",
-        "payload": {
-          "template_type": "generic",
-          "elements": elements
-        }
-      })
+    if elements.blank?
+      message.reply(text: I18n.t("no_stores"))
+    else
+    Grocery.send_generic(message, elements)
+    end
+  end
+
+  def self.send_generic(message, elements)
+    puts elements
+    this_times = (elements.count/10.0).ceil
+    this_times.times do |i|
+      message.reply(
+        "attachment": 
+        {
+          "type": "template",
+          "payload": {
+            "template_type": "generic",
+            "elements": elements[i*10..(i*10)+9]
+          }
+        })
+    end
   end
 
 #   items = ["1","2","3","4", "5"]

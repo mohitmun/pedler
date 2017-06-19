@@ -25,6 +25,7 @@ Bot.on :postback do |postback|
   postback.payload   # => 'EXTERMINATE'
 
   user = User.find_by(fb_id: postback.sender['id']) rescue nil
+  Rails.cache.write("chus", postback)
   if user.blank?
     User.create_from_message(postback)
   else
